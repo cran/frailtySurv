@@ -1,4 +1,4 @@
-7c7193a3b93f86de005c454f79292f0d *DESCRIPTION
+5b00f0644aef9e3546cb7b2f79ecb46a *DESCRIPTION
 f7d36d894063300efaaee02cb9200c6c *NAMESPACE
 04c20c10bd42cc066550af80c333c142 *R/RcppExports.R
 edd01f094a9f95bd909b5d5568d0251c *R/distributions.R
@@ -22,7 +22,7 @@ f481374e9fbfe2d2b5369fc30ea55f16 *R/summary.fitfrail.R
 6d534365c956ff1feac971e6af474872 *R/summary.genfrail.R
 76c6a02e1d828be1a1dca327638c9688 *R/summary.simfrail.R
 4448288253f27c28f9a2306c74802a6d *R/vcov.fitfrail.R
-570ac8768e33a73cc959d2e4cefa2499 *README.md
+e4636ef10b230b0c0b244d9092544c6e *README.md
 83565f9da40a1928128dd139a9e134da *data/drs.rda
 69178cc5333d50991818f5afb0a38c13 *data/hdfail.rda
 142b5a4e8ed891ee32c9f28d5c525219 *man/drs.Rd
@@ -41,8 +41,8 @@ b467c9f31144148ed8f33c7bed212193 *src/Makevars
 ba85d41e3be630e55efd37d75d5cb5ec *src/RcppExports.cpp
 987ae5b854301ef719b013bb50740220 *src/converged.h
 8f9a5a70456a0b11ab7244b4beb521f0 *src/cubature.h
-aaad8c1d45749e9e88052ad3ed734f34 *src/distributions.cpp
+4c20adbfaef2c5f1aeddb13a195cef83 *src/distributions.cpp
 438bd7d75ef9469b70371f87bacbb782 *src/distributions.h
-44178aadcf7498d56d3eb5a59768dada *src/estimators.cpp
+6bdb88dbcaba00e1ca184916c9c86e5e *src/estimators.cpp
 0d8fb115a4bd8bd638034ee01059a2a8 *src/hcubature.c
 b76332176f1b8acd24eab4ecb6bb30f0 *src/vwrapper.h
