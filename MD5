@@ -1,4 +1,4 @@
-5b00f0644aef9e3546cb7b2f79ecb46a *DESCRIPTION
+a20107a8c78295fc8199462ab0e3ba4d *DESCRIPTION
 f7d36d894063300efaaee02cb9200c6c *NAMESPACE
 04c20c10bd42cc066550af80c333c142 *R/RcppExports.R
 edd01f094a9f95bd909b5d5568d0251c *R/distributions.R
@@ -41,7 +41,7 @@ b467c9f31144148ed8f33c7bed212193 *src/Makevars
 ba85d41e3be630e55efd37d75d5cb5ec *src/RcppExports.cpp
 987ae5b854301ef719b013bb50740220 *src/converged.h
 8f9a5a70456a0b11ab7244b4beb521f0 *src/cubature.h
-4c20adbfaef2c5f1aeddb13a195cef83 *src/distributions.cpp
+b90f214b40b82071cdbcda7bad5711d1 *src/distributions.cpp
 438bd7d75ef9469b70371f87bacbb782 *src/distributions.h
 6bdb88dbcaba00e1ca184916c9c86e5e *src/estimators.cpp
 0d8fb115a4bd8bd638034ee01059a2a8 *src/hcubature.c
