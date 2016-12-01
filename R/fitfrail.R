@@ -35,10 +35,11 @@ fitfrail <- function(formula, dat, control, frailty, weights=NULL, se=FALSE, ...
       stop(gettextf("Argument %s not matched", names(extraargs)[indx==0L]),
            domain = NA)
   }
+  
   # Default to the fitfrail.control defaults
   if (missing(control)) control <- fitfrail.control(...)
   
-  if (!match(frailty,c("gamma","lognormal","invgauss", "pvf"), nomatch=0))
+  if (!match(frailty,c("gamma","lognormal","invgauss","pvf"), nomatch=0))
     stop("Unsupported frailty distribution:", frailty)
   
   Y <- model.extract(mf, "response")
@@ -76,19 +77,70 @@ fitfrail <- function(formula, dat, control, frailty, weights=NULL, se=FALSE, ...
   xdrop <- Xatt$assign %in% adrop  # columns to drop (always the intercept)
   X <- X[, !xdrop, drop=FALSE]
   
-  # Initialize beta to the coeffs determined by a coxph model without hidden frailty
-  init.beta <- coxph.fit(X, Y, strata=NULL, 
-                          offset=NULL, init=NULL, 
-                          control=coxph.control(), weights=NULL, 
-                          method="efron", row.names(mf))$coefficients
+  run.coxph <- FALSE
+  if (is.null(control$init.beta)) {
+    init.beta <- rep(0, ncol(X))
+  } else if (is.numeric(control$init.beta)) {
+    stopifnot(length(control$init.beta) == ncol(X))
+    init.beta <- control$init.beta
+  } else if (control$init.beta == "coxph") {
+    run.coxph <- TRUE
+  } else {
+    stop("Invalid init.beta=", control$init.beta)
+  }
   
-  # TODO: theta should initialize to a zero vector, dependening the num density args
-  init.theta <- init.frailty[[frailty]]
+  if (is.null(control$init.theta)) {
+    init.theta <- init.frailty[[frailty]]
+  } else if (is.numeric(control$init.theta)) {
+    stopifnot(length(control$init.theta) == length(init.frailty[[frailty]]))
+    if (any(control$init.theta < lb.frailty[[frailty]]) ||
+        any(control$init.theta > ub.frailty[[frailty]])) {
+      stop(sprintf("Frailty distribution initial parameters out of range. Parameters for %s frailty must be in: (%.2f, %.2f)", 
+           frailty, lb.frailty[[frailty]], ub.frailty[[frailty]]))
+    }
+    init.theta <- control$init.theta
+  } else if (control$init.theta == "coxph") {
+    run.coxph <- TRUE
+  } else {
+    stop("Invalid init.theta=", control$init.theta)
+  }
   
+  # Initialize beta and theta from coxph estimates.
+  # theta is initialized to the frailty distribution with same rank correlation 
+  # as the gamma frailty estimated by coxph
+  if (run.coxph) {
+    # Drop the fitfrail cluster term and maybe add the coxph cluster term below
+    coxph.formula <- drop.terms(terms(formula), tempc$terms, keep.response=TRUE)
+    
+    if (!is.null(control$init.theta) && control$init.theta == "coxph") {
+      # Replace the cluster term with frailty.gamma
+      # TODO: maybe a better way to specify frailty.gamma(cluster.term)
+      cluster.term <- regmatches(tempc$vars, 
+                                 gregexpr("(?<=\\().*?(?=\\))", tempc$vars, perl=T))[[1]]
+      coxph.formula <- update(coxph.formula,
+                              as.formula(sprintf("~ . + frailty.gamma(%s)", cluster.term)))
+    } else {
+      coxph.formula <- update(coxph.formula, as.formula("~ ."))
+    }
+    
+    suppressWarnings(fit.coxph <- coxph(coxph.formula, data=dat))
+    
+    if (!is.null(control$init.beta) && control$init.beta == "coxph") {
+      init.beta <- unname(fit.coxph$coefficients)
+    }
+    
+    if (!is.null(control$init.theta) && control$init.theta == "coxph") {
+      init.theta <- unname(theta.given.tau(tau.numerical(fit.coxph$history[[1]]$theta, "gamma"), frailty))
+    }
+  }
+  
+  names(init.beta) <- colnames(X)
+  names(init.theta) <- 1
+
   fit <- fitfrail.fit(X, Y, cluster, 
-                           init.beta, init.theta, 
-                           frailty,
-                           control, row.names(mf),
+                      init.beta, init.theta, 
+                      frailty,
+                      control, row.names(mf),
                       weights)
   class(fit) <- 'fitfrail'
   fit$call <- Call

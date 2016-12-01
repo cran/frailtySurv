@@ -1,10 +1,12 @@
 genfrail <- function(# Number of clusters and cluster sizes
                      N = 300,
+                     
                      # If K is int, then fixed cluster sizes
                      # If K is numeric vector, then sizes provided
                      # Otherwise draw random
                      # can be one of: "poisson", "pareto", "uniform"
                      K = 2, 
+                     
                      # cluster size distributian params:
                      # K-truncated Poisson: c(lambda, truncated value)
                      # Discrete Pareto: c(alpha, max value inclusive)
@@ -15,8 +17,10 @@ genfrail <- function(# Number of clusters and cluster sizes
                      beta = c(log(2)),
                      
                      # Frailty distribution and parameter vector
-                     # Can be one of: "gamma", "pvf", "lognormal", "invgauss", "posstab", "none"
+                     # Can be one of: "gamma", "pvf", "lognormal", 
+                     # "invgauss", "posstab", "none"
                      frailty = "gamma",
+                     
                      # Frailty distribution parameter vector
                      theta = c(2), 
                      
@@ -27,21 +31,40 @@ genfrail <- function(# Number of clusters and cluster sizes
                      covar.matrix = NULL,
                      
                      # Censoring distribution and parameters vector
-                     # censor.distr can be one of: "normal", "lognormal", "uniform", "none"
+                     # censor.distr can be one of: "normal", "lognormal", 
+                     # "uniform", "none"
                      censor.distr = "normal",
                      censor.param = c(130,15),
                      censor.rate = NULL, # If specified, overrides censor.mu
+                     censor.time = NULL, # If specified, overrides all other censor params
                      
                      # Only one of these needs to be specified
                      # Order of preference is: Lambda_0_inv, Lambda_0, lambda_0
-                     lambda_0 = NULL, #i.e. function(t, tau=4.6, C=0.01) (tau*(C*t)^tau)/t,
-                     Lambda_0 = NULL, #i.e. function(t, tau=4.6, C=0.01) (C*t)^tau,
-                     Lambda_0_inv = NULL, #i.e. function(t, tau=4.6, C=0.01) (t^(1/tau))/C,
+                     lambda_0 = NULL, #i.e. function(t, c=0.01, d=4.6) (d*(c*t)^d)/t,
+                     Lambda_0 = NULL, #i.e. function(t, c=0.01, d=4.6) (c*t)^d,
+                     Lambda_0_inv = NULL, #i.e. function(t, c=0.01, d=4.6) (t^(1/d))/c,
                      
                      # Round time to nearest round.base
-                     round.base = NULL
+                     round.base = NULL,
+                     
+                     # Control parameters, mostly for numeric integration
+                     control,
+                     
+                     ...
 ) {
   Call <- match.call()
+  
+  # Match any ... args to genfrail.control
+  extraargs <- list(...)
+  if (length(extraargs)) {
+    controlargs <- names(formals(genfrail.control)) #legal arg names
+    indx <- pmatch(names(extraargs), controlargs, nomatch=0L)
+    if (any(indx==0L))
+      stop(gettextf("Argument %s not matched", names(extraargs)[indx==0L]),
+           domain = NA)
+  }
+  
+  if (missing(control)) control <- genfrail.control(...)
   
   # Determine cluster sizes
   if (is.numeric(K) && length(K) == 1) {
@@ -65,16 +88,22 @@ genfrail <- function(# Number of clusters and cluster sizes
   # Generate the covariates
   p <- length(beta)
   Z <- matrix(0, nrow=NK, ncol=p)
-  for (j in 1:p) {
-    if (!is.null(covar.matrix)) {
-      Z <- covar.matrix
-    } else if (covar.distr == "normal") {
-      Z[, j] <- rnorm(NK, covar.param[1], covar.param[2])
-    } else if (covar.distr == "uniform") {
-      Z[, j] <- runif(NK, covar.param[1], covar.param[2])
-    } else if (covar.distr == "zero") {
-      Z[, j] <- rep(0, NK)
-      covar.param <- NULL
+  if (!is.null(covar.matrix)) {
+    if (nrow(covar.matrix) != NK || ncol(covar.matrix) != p) {
+      stop("covar.matrix must have N*K rows and length(beta) columns")
+    }
+    Z <- covar.matrix
+  } else {
+    Z <- matrix(0, nrow=NK, ncol=p)
+    for (j in 1:p) {
+      if (covar.distr == "normal") {
+        Z[, j] <- rnorm(NK, covar.param[1], covar.param[2])
+      } else if (covar.distr == "uniform") {
+        Z[, j] <- runif(NK, covar.param[1], covar.param[2])
+      } else if (covar.distr == "zero") {
+        Z[, j] <- rep(0, NK)
+        covar.param <- NULL
+      }
     }
   }
   
@@ -118,14 +147,16 @@ genfrail <- function(# Number of clusters and cluster sizes
         if (t <= 0) {
           return(0)
         }
-        integrate(lambda_0, 0, t, subdivisions = 1000L)$value
+        integrate(lambda_0, 0, t, 
+                  subdivisions=control$crowther.subdivisions,
+                  rel.tol=control$crowther.reltol)$value
       })
       hazard <- list(lambda_0=lambda_0)
     } else if (!is.null(Lambda_0)) {
       hazard <- list(Lambda_0=Lambda_0)
     } else {
       warning("Using a default baseline hazard. Did you forget to pass Lambda_0?")
-      Lambda_0 <- function(t, tau=4.6, C=0.01) (C*t)^tau
+      Lambda_0 <- function(t, c=0.01, d=4.6) (c*t)^d
       hazard <- list(Lambda_0=Lambda_0)
     }
     
@@ -143,79 +174,92 @@ genfrail <- function(# Number of clusters and cluster sizes
     })
   }
   
-  if (censor.distr == "normal") {
-    censor.density <- dnorm
-    censor.random <- rnorm
-    censor.quantile <- qnorm
-    censor.mu <- censor.param[1]
-    censor.sigma <- censor.param[2]
-  } else if (censor.distr == "lognormal") {
-    censor.density <- dlnorm
-    censor.random <- rlnorm
-    censor.quantile <- qlnorm
-    censor.sigma <- sqrt(log(1 + censor.param[2]^2/censor.param[1]^2))
-    censor.mu <- log(censor.param[1]) - censor.sigma^2/2
-  } else if (censor.distr == "uniform") {
-    censor.density <- dunif
-    censor.random <- runif
-    censor.quantile <- qunif
-    censor.lower <- censor.param[1]
-    censor.upper <- censor.param[2]
-    stopifnot(censor.lower < censor.upper)
-  } else if (censor.distr == "none") {
-    warning("Censoring distribution is set to none")
+  if (!is.null(censor.time)) {
+    if (length(censor.time) != NK) {
+      stop("censor.time must have length N*K")
+    }
   } else {
-    stop("Censoring distribution must be normal or lognormal")
-  }
-  
-  if (censor.distr == "none") {
-    obs.status <- rep(1, NK)
-    obs.time <- fail.time
-  } else {
-    if (!is.null(censor.rate)) {
-      stopifnot(0 <= censor.rate && censor.rate <= 1)
-      
-      # Empirical survivor and hazard functions
-      esurv <- ecdf(fail.time)
-      efail <- function(t) 1 - esurv(t)
-      
-      if (censor.distr == "uniform") {
-        interval <- censor.upper - censor.lower
-        # Split the integral up into 2 parts since it may actually be ~0 for 
-        # most of the interval. Make this split at the 50th percentile
-        mu <- uniroot(function(mu) {
-            lower <- mu - interval/2
-            upper <- mu + interval/2
-            censor.rate - 
-              (integrate(function(t) efail(t)*censor.density(t, lower, upper), 
-                         -Inf, censor.quantile(0.5, lower, upper), subdivisions=1e3)$value +
-                 integrate(function(t) efail(t)*censor.density(t, lower, upper), 
-                           censor.quantile(0.5, lower, upper), Inf, subdivisions=1e3)$value)
-          }, lower=0, upper=100, extendInt="up")$root
-        censor.lower <- mu - interval/2
-        censor.upper <- mu + interval/2
-      } else {
-        # Split the integral up into 2 parts since it may actually be ~0 for 
-        # most of the interval. Make this split at the 50th percentile
-        censor.mu <- uniroot(function(mu) 
-          censor.rate - 
-            (integrate(function(t) efail(t)*censor.density(t, mu, censor.sigma), 
-                       -Inf, censor.quantile(0.5, mu, censor.sigma), subdivisions=1e3)$value +
-               integrate(function(t) efail(t)*censor.density(t, mu, censor.sigma), 
-                         censor.quantile(0.5, mu, censor.sigma), Inf, subdivisions=1e3)$value),
-          lower=0, upper=100, extendInt="up")$root
-      }
+    if (censor.distr == "normal") {
+      censor.density <- dnorm
+      censor.random <- rnorm
+      censor.quantile <- qnorm
+      censor.mu <- censor.param[1]
+      censor.sigma <- censor.param[2]
+    } else if (censor.distr == "lognormal") {
+      censor.density <- dlnorm
+      censor.random <- rlnorm
+      censor.quantile <- qlnorm
+      censor.sigma <- sqrt(log(1 + censor.param[2]^2/censor.param[1]^2))
+      censor.mu <- log(censor.param[1]) - censor.sigma^2/2
+    } else if (censor.distr == "uniform") {
+      censor.density <- dunif
+      censor.random <- runif
+      censor.quantile <- qunif
+      censor.lower <- censor.param[1]
+      censor.upper <- censor.param[2]
+      stopifnot(censor.lower < censor.upper)
+    } else if (censor.distr == "none") {
+      warning("Censoring distribution is set to none")
+    } else {
+      stop("Censoring distribution must be normal or lognormal")
     }
     
-    # Non-informative right censoring
-    if (censor.distr == "uniform") {
-      censor.time <- censor.random(NK, censor.lower, censor.upper)
+    if (censor.distr == "none") {
+      censor.time <- rep(max(fail.time), NK)
     } else {
-      censor.time <- censor.random(NK, censor.mu, censor.sigma)
+      if (!is.null(censor.rate)) {
+        stopifnot(0 <= censor.rate && censor.rate <= 1)
+        
+        # Empirical survivor and hazard functions
+        esurv <- ecdf(fail.time)
+        efail <- function(t) 1 - esurv(t)
+        
+        if (censor.distr == "uniform") {
+          interval <- censor.upper - censor.lower
+          # Split the integral up into 2 parts since it may actually be ~0 for 
+          # most of the interval. Make this split at the 50th percentile
+          mu <- uniroot(function(mu) {
+              lower <- mu - interval/2
+              upper <- mu + interval/2
+              censor.rate - 
+                (integrate(function(t) efail(t)*censor.density(t, lower, upper), 
+                           -Inf, censor.quantile(0.5, lower, upper), 
+                           subdivisions=control$censor.subdivisions,
+                           rel.tol=control$censor.reltol)$value +
+                 integrate(function(t) efail(t)*censor.density(t, lower, upper), 
+                           censor.quantile(0.5, lower, upper), Inf, 
+                           subdivisions=control$censor.subdivisions,
+                           rel.tol=control$censor.reltol)$value)
+            }, lower=0, upper=100, extendInt="up")$root
+          censor.lower <- mu - interval/2
+          censor.upper <- mu + interval/2
+        } else {
+          # Split the integral up into 2 parts since it may actually be ~0 for 
+          # most of the interval. Make this split at the 50th percentile
+          censor.mu <- uniroot(function(mu) 
+            censor.rate - 
+              (integrate(function(t) efail(t)*censor.density(t, mu, censor.sigma), 
+                         -Inf, censor.quantile(0.5, mu, censor.sigma), 
+                         subdivisions=control$censor.subdivisions,
+                         rel.tol=control$censor.reltol)$value +
+                 integrate(function(t) efail(t)*censor.density(t, mu, censor.sigma), 
+                           censor.quantile(0.5, mu, censor.sigma), Inf, 
+                           subdivisions=control$censor.subdivisions,
+                           rel.tol=control$censor.reltol)$value),
+            lower=0, upper=100, extendInt="up")$root
+        }
+      }
+      
+      # Non-informative right censoring
+      if (censor.distr == "uniform") {
+        censor.time <- censor.random(NK, censor.lower, censor.upper)
+      } else {
+        censor.time <- censor.random(NK, censor.mu, censor.sigma)
+      }
     }
-    obs.status <- sign(fail.time <= censor.time)
-    obs.time <- pmin(fail.time, censor.time)
   }
+  obs.status <- sign(fail.time <= censor.time)
+  obs.time <- pmin(fail.time, censor.time)
   
   if (is.numeric(round.base)) {
     obs.time <- round.base*floor(obs.time/round.base + 0.5)

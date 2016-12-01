@@ -1,10 +1,12 @@
 fitfrail.control <- function(fitmethod="loglik",
-                             abstol=1e-8,
+                             abstol=0,
                              reltol=1e-6,
                              maxit=100,
                              int.abstol=0,
-                             int.reltol=1e-8, 
+                             int.reltol=1, 
                              int.maxit=1000, 
+                             init.beta="coxph",
+                             init.theta=NULL,
                              verbose=FALSE
                              ) {
   
@@ -30,6 +32,8 @@ fitfrail.control <- function(fitmethod="loglik",
        int.abstol=int.abstol,
        int.reltol=int.reltol,
        int.maxit=as.integer(int.maxit),
+       init.beta=init.beta,
+       init.theta=init.theta,
        verbose=as.logical(verbose)
        )
 }

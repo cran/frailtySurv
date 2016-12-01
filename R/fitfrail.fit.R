@@ -94,7 +94,12 @@ fitfrail.fit <- function(x, y, cluster, init.beta, init.theta, frailty,
       as.numeric(K_[[i]][j] >= 1:k_tau)
     }, rep(0, k_tau))
   
+  # Global convergence variables
   iter <- 0
+  rel.reduction <- Inf
+  abs.reduction <- Inf
+  loglik <- Inf
+  
   trace <- matrix(nrow=0, ncol=n.gamma+2)
   colnames(trace) <- c("Iteration",
                        paste("beta.", names(init.beta), sep=""),
@@ -106,19 +111,40 @@ fitfrail.fit <- function(x, y, cluster, init.beta, init.theta, frailty,
   # reused in other places (jacobian, covar matrix)
   fit_fn <- function(hat.gamma) {
     # Update the current estimate. Everything below depends on this
+    if (iter > 0) {
+      VARS$prev.hat.gamma <- VARS$hat.gamma
+    }
     VARS$hat.gamma <- hat.gamma
     
     # Modify the execution environment of fitfrail.fit
     with(VARS, {
-      if (iter >= control$maxit) {
+      # Check for maximum iters
+      if (control$maxit > 0 && iter >= control$maxit) {
         if (control$fitmethod == "loglik") {
           return(loglik)
         } else if (control$fitmethod == "score") {
           return(U_)
         }
       }
+      
+      # Check for convergence of loglik. See docs for fitfrail.
+      if (control$fitmethod == "loglik" && iter > 0 && loglik > prev.loglik) {
+        abs.reduction <- abs(loglik - prev.loglik)
+        rel.reduction <- abs((loglik - prev.loglik)/loglik)
+        
+        if ((control$abstol == 0 && control$reltol > 0 && rel.reduction <= control$reltol) ||
+            (control$reltol == 0 && control$abstol > 0 && abs.reduction <= control$abstol) ||
+            (abs.reduction > 0 && rel.reduction > 0 && 
+             (abs.reduction <= control$abstol || rel.reduction <= control$reltol))) {
+          hat.gamma <- prev.hat.gamma
+          return(loglik)
+        }
+      }
+      
+      # The outer estimation loop logically starts here
       iter <- iter + 1
       
+      # Unpack parameter estimates
       hat.beta <- hat.gamma[1:n.beta]
       hat.theta <- hat.gamma[(n.beta+1):(n.beta+n.theta)]
       
@@ -131,6 +157,7 @@ fitfrail.fit <- function(x, y, cluster, init.beta, init.theta, frailty,
         exp(sum(hat.beta * X_[[i]][j,]))
       }, 0)
       
+      # Enter the inner estimation loop for the baseline hazard
       bh_ <- bh(d_, R_star, K_, Y_, N_, N_dot_, hat.beta, hat.theta, frailty, weights,
                 control$int.abstol, control$int.reltol, control$int.maxit)
       
@@ -147,6 +174,7 @@ fitfrail.fit <- function(x, y, cluster, init.beta, init.theta, frailty,
                     control$int.abstol, control$int.reltol, control$int.maxit))
       
       loglik_vec <- loglikelihood(X_, K_, I_, phi_1_, lambda, hat.beta)
+      prev.loglik <- loglik
       loglik <- sum(weights * loglik_vec)
       
       if (control$verbose) {
@@ -185,7 +213,7 @@ fitfrail.fit <- function(x, y, cluster, init.beta, init.theta, frailty,
   
   # Already computed
   loglik_jacobian <- function(gamma=NULL) with(VARS, {
-    U_
+      U_
   })
   
   score_jacobian <- function(gamma=NULL) with(VARS, {
@@ -258,19 +286,19 @@ fitfrail.fit <- function(x, y, cluster, init.beta, init.theta, frailty,
                     lower=c(rep(-Inf, VARS$n.beta), lb.frailty[[frailty]]), 
                     upper=c(rep(Inf, VARS$n.beta),  ub.frailty[[frailty]]), 
                     method="L-BFGS-B",
-                    control=list(factr=control$reltol/.Machine$double.eps, 
-                                 pgtol=0, fnscale=-1)
+                    control=list(factr=0, pgtol=0, fnscale=-1, lmm=10, 
+                                 maxit=.Machine$integer.max)
                     )
-    hat.gamma <- fitter$par
+    # hat.gamma <- fitter$par
   } else if (control$fitmethod == "score") {
     fitter <- nleqslv(init.gamma, fit_fn, 
-                      control=list(xtol=control$reltol, ftol=control$abstol, btol=1e-3,
-                                   allowSingular=TRUE),
-                      method="Newton",
+                      control=list(xtol=control$reltol, ftol=control$abstol,
+                                   allowSingular=TRUE, maxit=control$maxit),
+                      method="Broyden",
                       jac=score_jacobian,
-                      jacobian=TRUE
+                      jacobian=FALSE
                       )
-    hat.gamma <- fitter$x
+    # hat.gamma <- fitter$x
   }
   fit.time <- Sys.time() - start.time
   
@@ -283,6 +311,7 @@ fitfrail.fit <- function(x, y, cluster, init.beta, init.theta, frailty,
   
   trace <- data.frame(trace)
   
+  hat.gamma <- VARS$hat.gamma
   hat.beta <- hat.gamma[1:n.beta]
   hat.theta <- hat.gamma[(n.beta+1):(n.gamma)]
   

@@ -7,7 +7,7 @@ plot.simfrail <- function(x, type=c("residuals","hazard"), ...) {
   }
 }
 
-plot.simfrail.residuals <- function(sim, n.Lambda=3, ...) {
+plot.simfrail.residuals <- function(sim, n.Lambda=3, Lambda.times=NULL, ...) {
   if (!requireNamespace("ggplot2", quietly = TRUE) || 
       !requireNamespace("reshape2", quietly = TRUE)) {
     stop("Plotting requires the ggplot2, and reshape2 packages")
@@ -15,20 +15,29 @@ plot.simfrail.residuals <- function(sim, n.Lambda=3, ...) {
   Lambda.cols <- names(sim)[grepl("^Lambda", names(sim))]
   
   # All BUT n.Lambda
-  if (n.Lambda < 0) {
-    n.Lambda <- max(length(Lambda.cols) + n.Lambda, 0)
-  } 
-  
-  if (n.Lambda == 0) {
-    # No Lambda
-    Lambda.cols <- NULL
-  } else if (length(Lambda.cols) > n.Lambda) {
-    # Evenly spaced n.Lambda
-    idx <- round(seq(0, length(Lambda.cols), 
-                     length.out=(n.Lambda+2))[2:(n.Lambda+1)])
+  if (!is.null(Lambda.times)) {
+    # Lambda.times overrides n.Lambda
+    if (!is.null(n.Lambda)) {
+      warning("Specifying Lambda.times overrides n.Lambda")
+    }
+    Lambda.cols <- paste("Lambda", Lambda.times, sep=".")
+  } else {
+    if (n.Lambda < 0) {
+      n.Lambda <- max(length(Lambda.cols) + n.Lambda, 0)
+    } 
     
-    Lambda.cols <- Lambda.cols[idx]
+    if (n.Lambda == 0) {
+      # No Lambda
+      Lambda.cols <- NULL
+    } else if (length(Lambda.cols) > n.Lambda) {
+      # Evenly spaced n.Lambda
+      idx <- round(seq(0, length(Lambda.cols), 
+                       length.out=(n.Lambda+2))[2:(n.Lambda+1)])
+      
+      Lambda.cols <- Lambda.cols[idx]
+    }
   }
+  
   hat.cols <- c(names(sim)[grepl("^hat.beta|^hat.theta", names(sim))], 
                 paste("hat.", Lambda.cols, sep=""))
   value.cols <- c(names(sim)[grepl("^beta|^theta", names(sim))], Lambda.cols)
@@ -42,21 +51,23 @@ plot.simfrail.residuals <- function(sim, n.Lambda=3, ...) {
   
   res.melt <- melt(residuals, id = c("N"))
   cases <- c(t(unique(res.melt["N"])))
-  res.melt$x <- factor(0.5*floor(res.melt$N))
+  res.melt$x <- factor(res.melt$N)
   
   p <- ggplot(res.melt, aes_string(x='x', y='value', fill='variable')) + 
     geom_boxplot(notch=TRUE) +
     facet_grid(.~variable) +
-    labs(x="N",y="Residual") + 
-    theme(legend.position="none",axis.text.x=element_text(angle=-90, vjust=0.4,hjust=1))
+    labs(x="N", y="Bias") + 
+    theme(legend.position="none", 
+          axis.text.x=element_text(angle=-90, vjust=0.4, hjust=1))
   
   p
 }
 
 plot.simfrail.hazard <- function(sim, CI=0.95, ...) {
   if (!requireNamespace("ggplot2", quietly = TRUE) || 
-      !requireNamespace("reshape2", quietly = TRUE)) {
-    stop("Plotting requires the ggplot2, reshape2 packages")
+      !requireNamespace("reshape2", quietly = TRUE)
+      ) {
+    stop("Plotting requires the ggplot2 and reshape2 packages")
   }
   
   hats <- sim[,grepl("^hat.Lambda", names(sim))]
