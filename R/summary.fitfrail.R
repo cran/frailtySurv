@@ -1,12 +1,12 @@
-summary.fitfrail <- function(object, type="survival", Lambda.times=NULL, 
+summary.fitfrail <- function(object, type=c("survival", "cumhaz"), Lambda.times=NULL, 
                              censored=FALSE, se=FALSE, CI=0.95, ...) {
   fit <- object
   
-  if (!match(type,c("survival", "hazard"), nomatch=0))
-    stop("type must be either 'survival' or 'hazard'")
-  
   if (!inherits(fit, "fitfrail")) 
     stop("summary.fitfrail can only be used for fitfrail objects")
+  
+  if (!match(type, c("survival", "cumhaz"), nomatch=0))
+    stop("type must be either 'survival' or 'cumhaz'")
   
   if (!is.null(Lambda.times)) {
     if (!is.numeric(Lambda.times)) 
@@ -40,16 +40,16 @@ summary.fitfrail <- function(object, type="survival", Lambda.times=NULL,
   
   if (type == "survival") {
     result$surv <- exp(-fit$Lambda.fun(Lambda.times))
-  } else if (type == "hazard") {
-    result$haz <- fit$Lambda.fun(Lambda.times)
+  } else if (type == "cumhaz") {
+    result$cumhaz <- fit$Lambda.fun(Lambda.times)
   }
   
   if (se) {
-    cbh.se <- diag(vcov(fit, Lambda.times=Lambda.times, boot=TRUE, ...))
-    cbh.se <- cbh.se[grepl("^Lambda", names(cbh.se))]
+    cumhaz.se <- diag(vcov(fit, Lambda.times=Lambda.times, boot=TRUE, ...))
+    cumhaz.se <- cumhaz.se[grepl("^Lambda", names(cumhaz.se))]
     
     if (type == "survival") {
-      result$std.err <- exp(-result$surv + cbh.se^2/2)*sqrt(exp(cbh.se^2) - 1)
+      result$std.err <- exp(-result$surv + cumhaz.se^2/2)*sqrt(exp(cumhaz.se^2) - 1)
       
       if (CI > 0) {
         zval <- qnorm(1- (1-CI)/2, 0,1)
@@ -58,8 +58,8 @@ summary.fitfrail <- function(object, type="survival", Lambda.times=NULL,
         result$lower.ci <- lower
         result$upper.ci <- upper
       }
-    } else if (type == "hazard") {
-      result$std.err <- cbh.se
+    } else if (type == "cumhaz") {
+      result$std.err <- cumhaz.se
       
       if (CI > 0) {
         zval <- qnorm(1- (1-CI)/2, 0,1)

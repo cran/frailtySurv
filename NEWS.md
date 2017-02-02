@@ -1,6 +1,14 @@
 frailtySurv
 --------
 
+# Version 1.3.2 (February 2017)
+
+## Bug fixes
+  * Renamed "hazard" "cumhaz" in plot/summary functions to avoid confusion with the baseline hazard rate.
+  * Fixed typos in fitfrail.control docs.
+  * Fixed a bug in lognormal 2nd derivative, resulting in biased estimates using fitmethod="score".
+  * Added checks for object and param matching in plot/summary functions
+
 # Version 1.3.1 (December 2016)
   
 ## New features

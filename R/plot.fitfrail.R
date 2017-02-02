@@ -1,7 +1,14 @@
-plot.fitfrail <- function(x, type=c("hazard", "trace"), ...) {
+plot.fitfrail <- function(x, type=c("cumhaz", "trace"), ...) {
   fit <- x
-  if (type == "hazard") {
-    plot.fitfrail.hazard(fit, ...)
+  
+  if (!inherits(fit, "fitfrail")) 
+    stop("plot.fitfrail can only be used for fitfrail objects")
+  
+  if (!match(type, c("cumhaz", "trace"), nomatch=0))
+    stop("type must be either 'cumhaz' or 'trace'")
+  
+  if (type == "cumhaz") {
+    plot.fitfrail.cumhaz(fit, ...)
   } else if (type == "trace") {
     plot.fitfrail.trace(fit, ...)
   }
@@ -45,7 +52,7 @@ plot.fitfrail.trace <- function(fit, show.loglik=TRUE, ...) {
   }
 }
 
-plot.fitfrail.hazard <- function(fit, CI=0, end=NULL, ...) {
+plot.fitfrail.cumhaz <- function(fit, CI=0, end=NULL, ...) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Plotting requires the ggplot2 package")
   }
