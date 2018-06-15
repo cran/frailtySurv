@@ -2,8 +2,8 @@ Title: General Semiparametric Shared Frailty Model
 Priority: optional
 Type: Package
 Package: frailtySurv
-Version: 1.3.3
-Date: 2018-06-01
+Version: 1.3.4
+Date: 2018-06-15
 Authors@R: c(person("Vinnie Monaco", role = c("aut", "cre"),
 		          email = "contact@vmonaco.com"),
 	           person("Malka Gorfine", role = "aut",
@@ -28,8 +28,8 @@ LazyLoad: Yes
 ByteCompile: Yes
 Repository: CRAN
 RoxygenNote: 5.0.1
-Packaged: 2018-06-05 16:22:38 UTC; vinnie
+Packaged: 2018-06-15 15:18:04 UTC; vinnie
 Author: Vinnie Monaco [aut, cre],
   Malka Gorfine [aut],
   Li Hsu [aut]
-Date/Publication: 2018-06-05 17:25:15 UTC
+Date/Publication: 2018-06-15 16:04:39 UTC
