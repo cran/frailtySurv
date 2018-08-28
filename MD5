@@ -1,6 +1,6 @@
-88d753393b19c09589df07a7a9792891 *DESCRIPTION
+c05d46090344955ad9e8dfc58a66727c *DESCRIPTION
 75932754c21493aadf5f7381030ff948 *NAMESPACE
-44244dde5c36b0cda36dcf9b87a32b72 *NEWS.md
+c606e7e6eaae7376e6acd6e6f73396ac *NEWS.md
 5cf0caca807c2103100e20ca5b57ed91 *R/RcppExports.R
 a765bd58436e30f16bd4bafa6d3b1016 *R/distributions.R
 6079d5f6b78329cff0273093210c01c2 *R/fitfrail.R
@@ -27,10 +27,11 @@ d68621655f3ce9c5154c52d2ba44cf7e *R/print.fitfrail.R
 f9fcceb79f92c78e27dd82378757d3d8 *README.md
 83565f9da40a1928128dd139a9e134da *data/drs.rda
 69178cc5333d50991818f5afb0a38c13 *data/hdfail.rda
+7f5f8c7a2a78eeb6bc4fa6ed0b8e0c39 *inst/CITATION
 582d6329605a5dfa68ed03f08d07024f *man/drs.Rd
 405c46493ccfaae5adbb0248060216e9 *man/figures/example-cumhaz-1.png
 c1eb00230d09efc5a0d9cff8bc4b8c5b *man/figures/example-trace-1.png
-e6a2e21c8f6ac88940b54111e1acdeb9 *man/fitfrail.Rd
+c571b7c99ee3cbe21f1732b8665f4c9c *man/fitfrail.Rd
 c9947db3fdda94daebfb5b95b4314b17 *man/fitfrail.control.Rd
 4e98877571e89b2bcdea44fcd865cd5b *man/frailtySurv.Rd
 ddc60d87d862fd003236fc912de26a9d *man/genfrail.Rd
