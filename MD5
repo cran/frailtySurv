@@ -1,6 +1,6 @@
-c05d46090344955ad9e8dfc58a66727c *DESCRIPTION
+0eb027bbd6335400b853ef8984879c8e *DESCRIPTION
 75932754c21493aadf5f7381030ff948 *NAMESPACE
-c606e7e6eaae7376e6acd6e6f73396ac *NEWS.md
+e67a72847aea723e20243289bb5d1372 *NEWS.md
 5cf0caca807c2103100e20ca5b57ed91 *R/RcppExports.R
 a765bd58436e30f16bd4bafa6d3b1016 *R/distributions.R
 6079d5f6b78329cff0273093210c01c2 *R/fitfrail.R
@@ -34,7 +34,7 @@ c1eb00230d09efc5a0d9cff8bc4b8c5b *man/figures/example-trace-1.png
 c571b7c99ee3cbe21f1732b8665f4c9c *man/fitfrail.Rd
 c9947db3fdda94daebfb5b95b4314b17 *man/fitfrail.control.Rd
 4e98877571e89b2bcdea44fcd865cd5b *man/frailtySurv.Rd
-ddc60d87d862fd003236fc912de26a9d *man/genfrail.Rd
+4d5d45434fa45044acd2c93d27f396b8 *man/genfrail.Rd
 e81f046458ba2d73e48d40ab7c5536be *man/genfrail.control.Rd
 65a8903e98c971255d118656928c3af5 *man/hdfail.Rd
 1ac63e37894f0326f77fccbbbb0bfafa *man/plot.fitfrail.Rd
