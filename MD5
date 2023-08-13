@@ -1,4 +1,4 @@
-76bc8ccb019c32eeb312e03e6f9bd6c5 *DESCRIPTION
+57d942649f083b120ca820cea935ba97 *DESCRIPTION
 75932754c21493aadf5f7381030ff948 *NAMESPACE
 0ba5e61e2ae37e828288a91925850c6c *NEWS.md
 5cf0caca807c2103100e20ca5b57ed91 *R/RcppExports.R
@@ -24,7 +24,7 @@ d68621655f3ce9c5154c52d2ba44cf7e *R/print.fitfrail.R
 6d534365c956ff1feac971e6af474872 *R/summary.genfrail.R
 92c3961318a0538d98660c22b378d394 *R/summary.simfrail.R
 4448288253f27c28f9a2306c74802a6d *R/vcov.fitfrail.R
-62fe8f95d4b7fb84938b6f0fd0670f1e *README.md
+6039bcc39b635dd60bb4919e999d1a81 *README.md
 83565f9da40a1928128dd139a9e134da *data/drs.rda
 69178cc5333d50991818f5afb0a38c13 *data/hdfail.rda
 7f5f8c7a2a78eeb6bc4fa6ed0b8e0c39 *inst/CITATION
@@ -36,7 +36,7 @@ c9947db3fdda94daebfb5b95b4314b17 *man/fitfrail.control.Rd
 4e98877571e89b2bcdea44fcd865cd5b *man/frailtySurv.Rd
 4d5d45434fa45044acd2c93d27f396b8 *man/genfrail.Rd
 e81f046458ba2d73e48d40ab7c5536be *man/genfrail.control.Rd
-fad6a912217fd0354d51cedc457dafe7 *man/hdfail.Rd
+d44a7fac272cbf21983046e4b93bbc22 *man/hdfail.Rd
 1ac63e37894f0326f77fccbbbb0bfafa *man/plot.fitfrail.Rd
 1751f02e25b9f16a6c456f8feb347ca0 *man/plot.simfrail.Rd
 10fc099db400a98872764ad6b946048e *man/simcoxph.Rd
@@ -50,5 +50,5 @@ b467c9f31144148ed8f33c7bed212193 *src/Makevars
 e5cd9d692d32b353f530cf6f586acc98 *src/distributions.cpp
 438bd7d75ef9469b70371f87bacbb782 *src/distributions.h
 703abbb11e2c6613ba5342bba75e81db *src/estimators.cpp
-91a84e6d31f2310396a02e9e9007b23e *src/hcubature.c
+d9e3ba678dc38ace6f35122ca93fcc74 *src/hcubature.c
 b76332176f1b8acd24eab4ecb6bb30f0 *src/vwrapper.h
